@@ -102,43 +102,85 @@
     const TARGET_URL = 'https://api.elections.kalshi.com/trade-api/v2/events?limit=200&with_nested_markets=true&status=open';
     const API_URL = 'https://corsproxy.io/?' + encodeURIComponent(TARGET_URL);
     const CACHE_KEY = 'kalshi_trending_data';
-    const CACHE_EXPIRY = 3600000; // 1 hour
+    const CACHE_EXPIRY = 3600000; // 1 hour in ms
 
-    // displayMarket, loadCachedData, saveToCache functions remain the same...
+    // 1. Display function (called by both cache and fresh fetch)
+    function displayMarket(market, isFallback = false, timestamp = new Date()) {
+        if (!market) return;
+        document.querySelector('.title').textContent = market.title_short || market.title || 'Market Title Unavailable';
+        const yesPrice = market.yes_bid ?? market.last_price ?? '--';
+        const noPrice = market.no_bid ?? (market.last_price ? (100 - market.last_price) : '--');
+        document.querySelector('.prices .price-box:nth-child(1) p').textContent = `${yesPrice}¢`;
+        document.querySelector('.prices .price-box:nth-child(2) p').textContent = `${noPrice}¢`;
+        const volume = (market.volume_24h ?? market.volume ?? 0).toLocaleString();
+        let volumeText = `24h Volume: ${volume} contracts<br>Last updated: ${timestamp.toLocaleTimeString()}`;
+        if (isFallback) {
+            volumeText += `<br><span class="fallback-note">(Fallback: Highest volume across all categories)</span>`;
+        }
+        document.querySelector('.volume').innerHTML = volumeText;
+    }
 
-    // Updated fetchWithRetry (add mode: 'cors' explicitly if needed, but usually not)
+    // 2. Load from cache
+    function loadCachedData() {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            try {
+                const { market, isFallback, timestamp } = JSON.parse(cached);
+                if (Date.now() - timestamp < CACHE_EXPIRY) {
+                    displayMarket(market, isFallback, new Date(timestamp));
+                    console.log('Loaded from cache successfully');
+                    return true;
+                } else {
+                    localStorage.removeItem(CACHE_KEY);
+                    console.log('Cache expired');
+                }
+            } catch (e) {
+                console.error('Cache parse error:', e);
+            }
+        }
+        return false;
+    }
+
+    // 3. Save to cache
+    function saveToCache(market, isFallback) {
+        const data = { market, isFallback, timestamp: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        console.log('Saved fresh data to cache');
+    }
+
+    // 4. Fetch with retries
     async function fetchWithRetry(url, retries = 3, delay = 1000) {
         for (let i = 0; i < retries; i++) {
             try {
-                const response = await fetch(url, { mode: 'cors' }); // 'cors' is default, but explicit helps debug
+                console.log(`Fetch attempt ${i+1} to ${url}`);
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status} - ${response.statusText}`);
                 }
                 return await response.json();
             } catch (error) {
-                console.error(`Fetch attempt ${i+1} failed: ${error}`);
+                console.error(`Fetch attempt ${i+1} failed:`, error);
                 if (i === retries - 1) throw error;
                 await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
             }
         }
     }
 
-    // fetchTrendingBet remains mostly the same, but add better logging
+    // 5. Main fetch logic
     async function fetchTrendingBet() {
         try {
-            console.log('Attempting fetch via proxy...');
             const data = await fetchWithRetry(API_URL);
-            console.log('API response received:', data.events?.length || 'no events');
-            
+            console.log('API data received, events count:', data.events?.length || 0);
+
             let trendingMarket = null;
             let maxVolume = 0;
             let politicsFound = false;
 
-            data.events.forEach(event => {
+            (data.events || []).forEach(event => {
                 const category = (event.category || '').toLowerCase();
                 if (category === 'politics' || category.includes('politics')) politicsFound = true;
-                event.markets.forEach(market => {
-                    const vol = market.volume_24h || market.volume || 0; // extra safeguard
+                (event.markets || []).forEach(market => {
+                    const vol = market.volume_24h ?? market.volume ?? 0;
                     if (vol > maxVolume) {
                         maxVolume = vol;
                         trendingMarket = market;
@@ -154,22 +196,24 @@
                 document.querySelector('#content').innerHTML = '<p class="error">No active markets found today.</p>';
             }
         } catch (error) {
-            console.error('Final fetch error:', error);
-            document.querySelector('#content').innerHTML = '<p class="error">API access issue (likely temporary). Using cached data if available.</p>';
-            if (!loadCachedData()) {
-                document.querySelector('#content').innerHTML = '<p class="error">Error loading data from Kalshi. Check back soon!</p>';
-            }
+            console.error('Fetch error:', error);
+            document.querySelector('#content').innerHTML = '<p class="error">Could not load Kalshi data right now. Showing cached if available.</p>';
+            loadCachedData();  // Try cache as fallback
         }
     }
 
-    // Initial load + interval same as before
-    if (!loadCachedData()) {
-        document.querySelector('.title').textContent = 'Loading...';
+    // INITIAL LOAD: Show cache immediately if exists, then fetch fresh
+    const hasCache = loadCachedData();
+    if (!hasCache) {
+        document.querySelector('.title').textContent = 'Loading trending bet...';
     }
-    fetchTrendingBet();
+    fetchTrendingBet();  // Always try fresh
+
+    // Auto-refresh every 5 min
     setInterval(fetchTrendingBet, 300000);
 </script>
 </body>
 </html>
+
 
 
