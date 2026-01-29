@@ -99,7 +99,8 @@
     </div>
 
     <script>
-        const API_URL = 'https://api.elections.kalshi.com/trade-api/v2/events?limit=200&with_nested_markets=true&status=open';
+        const TARGET_URL = 'https://api.elections.kalshi.com/trade-api/v2/events?limit=200&with_nested_markets=true&status=open';
+        const API_URL = 'https://corsproxy.io/?' + encodeURIComponent(TARGET_URL);
         const CACHE_KEY = 'kalshi_trending_data';
         const CACHE_EXPIRY = 3600000; // 1 hour in ms
 
@@ -203,3 +204,4 @@
     </script>
 </body>
 </html>
+
