@@ -56,11 +56,23 @@
             letter-spacing: 1px;
             color: #09C285;
         }
+        .event-image-container {
+            text-align: center;
+            margin: 12px 0 18px;
+        }
+        #event-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            object-fit: contain;
+            display: none; /* hidden until loaded */
+        }
         .main-title {
-            font-size: 34px;
+            font-size: 32px;
             font-weight: 900;
             text-align: center;
-            margin: 18px 0 8px;
+            margin: 12px 0 8px;
             line-height: 1.1;
             color: #ffffff;
             text-shadow: 0 2px 6px rgba(0,0,0,0.7);
@@ -141,6 +153,9 @@
             </div>
 
             <div id="main-content">
+                <div class="event-image-container">
+                    <img id="event-image" alt="Event Visual" onload="this.style.display='block';" onerror="this.style.display='none';">
+                </div>
                 <h1 class="main-title">Loading Hot Bet...</h1>
                 <div class="prices" id="prices">
                     <div class="price-box yes"><h3>YES</h3><p>--¢</p></div>
@@ -154,33 +169,45 @@
     </div>
 
 <script>
-    const TARGET_URL = 'https://api.elections.kalshi.com/trade-api/v2/events?limit=200&with_nested_markets=true&status=open';
-    const API_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(TARGET_URL);
+    const BASE_API = 'https://api.elections.kalshi.com/trade-api/v2/';
+    const PROXY = 'https://api.allorigins.win/raw?url=';
+    const EVENTS_URL = PROXY + encodeURIComponent(BASE_API + 'events?limit=200&with_nested_markets=true&status=open');
     const CACHE_KEY = 'kalshi_trending_ad';
     const CACHE_EXPIRY = 3600000; // 1 hour
 
-    function displayMarket(market, isFallback = false, timestamp = new Date()) {
+    function displayMarket(market, eventImageUrl = '', isFallback = false, timestamp = new Date()) {
         if (!market) return;
         document.querySelector('.main-title').textContent = market.title_short || market.title || 'HOT MARKET';
+        
         const yesPrice = market.yes_bid ?? market.last_price ?? '--';
         const noPrice = market.no_bid ?? (market.last_price ? (100 - market.last_price) : '--');
         document.querySelector('.price-box.yes p').textContent = `${yesPrice}¢`;
         document.querySelector('.price-box.no p').textContent = `${noPrice}¢`;
+        
         const volume = (market.volume_24h ?? market.volume ?? 0).toLocaleString();
         let volText = `24h Volume: ${volume} contracts<br>Last updated: ${timestamp.toLocaleTimeString([], {timeStyle: 'short'})}`;
         if (isFallback) {
-            volText += `<br><span class="fallback-note">(Top volume market – Politics preferred)</span>`;
+            volText += `<br><span class="fallback-note">(Top volume – Politics preferred)</span>`;
         }
         document.querySelector('.volume').innerHTML = volText;
+
+        // Set event image
+        const imgEl = document.getElementById('event-image');
+        if (eventImageUrl) {
+            imgEl.src = eventImageUrl.startsWith('http') ? eventImageUrl : 'https://kalshi.com' + eventImageUrl; // in case relative
+            imgEl.style.display = 'block';
+        } else {
+            imgEl.style.display = 'none';
+        }
     }
 
     function loadCachedData() {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
             try {
-                const { market, isFallback, timestamp } = JSON.parse(cached);
+                const { market, eventImageUrl, isFallback, timestamp } = JSON.parse(cached);
                 if (Date.now() - timestamp < CACHE_EXPIRY) {
-                    displayMarket(market, isFallback, new Date(timestamp));
+                    displayMarket(market, eventImageUrl, isFallback, new Date(timestamp));
                     return true;
                 }
             } catch (e) {}
@@ -188,18 +215,22 @@
         return false;
     }
 
-    function saveToCache(market, isFallback) {
+    function saveToCache(market, eventImageUrl, isFallback) {
         localStorage.setItem(CACHE_KEY, JSON.stringify({
-            market, isFallback, timestamp: Date.now()
+            market, eventImageUrl, isFallback, timestamp: Date.now()
         }));
+    }
+
+    async function fetchJson(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
     }
 
     async function fetchWithRetry(url, retries = 3, delay = 1200) {
         for (let i = 0; i < retries; i++) {
             try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(res.status);
-                return await res.json();
+                return await fetchJson(url);
             } catch (err) {
                 if (i === retries - 1) throw err;
                 await new Promise(r => setTimeout(r, delay * (i + 1)));
@@ -209,10 +240,11 @@
 
     async function fetchTrendingBet() {
         try {
-            const data = await fetchWithRetry(API_URL);
+            const data = await fetchWithRetry(EVENTS_URL);
             let trending = null;
             let maxVol = 0;
             let politics = false;
+            let selectedEventTicker = null;
 
             (data.events || []).forEach(ev => {
                 if ((ev.category || '').toLowerCase().includes('politics')) politics = true;
@@ -221,14 +253,20 @@
                     if (v > maxVol) {
                         maxVol = v;
                         trending = m;
+                        selectedEventTicker = ev.event_ticker;
                     }
                 });
             });
 
-            if (trending) {
+            if (trending && selectedEventTicker) {
+                // Fetch event details for image
+                const eventUrl = PROXY + encodeURIComponent(BASE_API + `events/${selectedEventTicker}`);
+                const eventData = await fetchWithRetry(eventUrl).catch(() => ({}));
+                const eventImageUrl = eventData.event?.image_url || '';
+
                 const fallback = !politics;
-                displayMarket(trending, fallback);
-                saveToCache(trending, fallback);
+                displayMarket(trending, eventImageUrl, fallback);
+                saveToCache(trending, eventImageUrl, fallback);
             } else {
                 document.getElementById('main-content').innerHTML = '<p class="error">No active markets found – check Kalshi.com!</p>';
             }
@@ -243,7 +281,7 @@
     // Start
     loadCachedData() || (document.querySelector('.main-title').textContent = 'Finding the hottest bet...');
     fetchTrendingBet();
-    setInterval(fetchTrendingBet, 300000); // 5 min
+    setInterval(fetchTrendingBet, 300000); // 5 min refresh
 </script>
 </body>
 </html>
