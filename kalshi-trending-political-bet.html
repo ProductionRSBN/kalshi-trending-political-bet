@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalshi Trending Political Bet</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent; /* For Wirecast overlay */
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        .graphic {
+            width: var(--graphic-width, 500px);
+            height: calc(var(--graphic-width) * 1.2); /* 5:6 ratio (height = width * 6/5) */
+            background: linear-gradient(to bottom, #0a0a0a, #1a1a1a); /* Dark ad-style background */
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+        }
+        .header img {
+            width: 150px;
+        }
+        .content {
+            text-align: center;
+        }
+        .title {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        .prices {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .price-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        .price-box h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .price-box p {
+            margin: 5px 0 0;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .volume {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        .cta {
+            text-align: center;
+            font-size: 18px;
+            background: #ff6b00; /* Kalshi orange-ish */
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .error {
+            text-align: center;
+            font-size: 18px;
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="graphic" id="graphic">
+        <div class="header">
+            <img src="https://kalshi.com/logo.svg" alt="Kalshi Logo"> <!-- Official logo URL; replace if needed -->
+            <h2>Trending US Political Bet Today</h2>
+        </div>
+        <div class="content" id="content">
+            <h1 class="title">Loading...</h1>
+            <div class="prices">
+                <div class="price-box"><h3>Yes</h3><p>--¢</p></div>
+                <div class="price-box"><h3>No</h3><p>--¢</p></div>
+            </div>
+            <p class="volume">24h Volume: --</p>
+        </div>
+        <div class="cta">Bet on Real Events with Kalshi – Your Prediction Market Sponsor!</div>
+    </div>
+
+    <script>
+        const API_URL = 'https://trading-api.kalshi.com/trade-api/v2/events?limit=200&with_nested_markets=true&status=open';
+
+        async function fetchTrendingPoliticalBet() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                let trendingMarket = null;
+                let maxVolume = 0;
+
+                data.events.forEach(event => {
+                    if (event.category.toLowerCase() === 'politics') { // Filter for Politics category
+                        event.markets.forEach(market => {
+                            if (market.volume_24h > maxVolume) {
+                                maxVolume = market.volume_24h;
+                                trendingMarket = market;
+                            }
+                        });
+                    }
+                });
+
+                if (trendingMarket) {
+                    document.querySelector('.title').textContent = trendingMarket.title_short || trendingMarket.title;
+                    document.querySelector('.prices .price-box:nth-child(1) p').textContent = `${trendingMarket.yes_bid}¢`;
+                    document.querySelector('.prices .price-box:nth-child(2) p').textContent = `${trendingMarket.no_bid}¢`;
+                    document.querySelector('.volume').textContent = `24h Volume: $${trendingMarket.volume_24h_fp}`;
+                } else {
+                    document.querySelector('#content').innerHTML = '<p class="error">No active political markets found today.</p>';
+                }
+            } catch (error) {
+                document.querySelector('#content').innerHTML = '<p class="error">Error loading data. Try again later.</p>';
+            }
+        }
+
+        // Initial fetch
+        fetchTrendingPoliticalBet();
+
+        // Auto-update every 5 minutes
+        setInterval(fetchTrendingPoliticalBet, 300000); // 5 min = 300000 ms
+    </script>
+</body>
+</html>
