@@ -12,36 +12,42 @@
             font-family: Arial, sans-serif;
             color: #fff;
         }
-        .graphic {
-            width: var(--graphic-width, 500px);
-            height: calc(var(--graphic-width) * 1.2);
+         .graphic {
+            width: 100%;                     /* Fills the Browser source width */
+            height: 0;                       /* Collapse height for aspect hack */
+            padding-bottom: 100%;            /* 100% = perfect square (height = width) */
             background-image: url('light-texture.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            border-radius: 0px;
+            border-radius: 0;                /* No rounded corners */
             overflow: hidden;
-            box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
+            padding: 5%;                     /* Keeps content from touching edges */
             box-sizing: border-box;
-            position: relative; /* needed for ::before positioning */
+            position: relative;
         }
-        
         .graphic::before {
             content: "";
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.55);
-            border-radius: 0px;
+            background: rgba(0, 0, 0, 0.55); /* Keep overlay for text readability */
+            border-radius: 0;                /* Match no radius */
             z-index: 0;
         }
-        
         .header, .content, .cta {
             position: relative;
             z-index: 1;
+        }
+        /* Optional: Slightly adjust font sizes for square layout if needed */
+        .title {
+            font-size: clamp(22px, 5vw, 32px);
+        }
+        .price-box p {
+            font-size: clamp(32px, 8vw, 48px);
         }
         .header {
             text-align: center;
@@ -232,6 +238,7 @@
 </script>
 </body>
 </html>
+
 
 
 
