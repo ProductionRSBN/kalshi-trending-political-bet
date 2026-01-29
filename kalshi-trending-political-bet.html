@@ -3,142 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalshi Trending Bet</title>
+    <title>Kalshi Trending Bet – LIVE!</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: transparent; /* For Wirecast overlay */
-            font-family: Arial, sans-serif;
-            color: #fff;
-        }
-        .graphic {
-            width: var(--graphic-width, 500px);
-            height: calc(var(--graphic-width) * 1.2);
-            background-image: url('light-texture.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            border-radius: 0px;
+            background: transparent;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #ffffff;
             overflow: hidden;
-            box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5);
+        }
+        .ad-graphic {
+            width: 546px;
+            height: 658px;
+            background: linear-gradient(135deg, #003221 0%, #001a0f 100%);
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 20px;
+        }
+        .ad-graphic::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.48);
+            z-index: 0;
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
-            position: relative; /* needed for ::before positioning */
-        }
-        
-        .graphic::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.55);
-            border-radius: 0px;
-            z-index: 0;
-        }
-        
-        .header, .content, .cta {
-            position: relative;
-            z-index: 1;
+            height: 100%;
         }
         .header {
             text-align: center;
         }
         .header img {
-            width: 180px;
+            width: 220px;
+            height: auto;
+            margin-bottom: 12px;
         }
-        .content {
+        .header h2 {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #09C285;
+        }
+        .main-title {
+            font-size: 34px;
+            font-weight: 900;
             text-align: center;
-        }
-        .title {
-            font-size: 24px;
-            margin: 10px 0;
+            margin: 18px 0 8px;
+            line-height: 1.1;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.7);
         }
         .prices {
             display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
+            justify-content: center;
+            gap: 28px;
+            margin: 20px 0 16px;
         }
         .price-box {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 10px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(4px);
+            padding: 14px 28px;
+            border-radius: 16px;
+            min-width: 110px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.18);
         }
         .price-box h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .price-box p {
-            margin: 5px 0 0;
-            font-size: 32px;
+            margin: 0 0 6px;
+            font-size: 20px;
             font-weight: bold;
+            color: #ffffff;
+        }
+        .price-box.yes h3 { color: #265CFF; }
+        .price-box.no h3  { color: #AA00FF; }
+        .price-box p {
+            margin: 0;
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1;
+            color: #ffffff;
         }
         .volume {
-            font-size: 16px;
-            opacity: 0.8;
+            text-align: center;
+            font-size: 17px;
+            opacity: 0.9;
+            margin: 10px 0 24px;
         }
         .cta {
+            background: #FF6B00;
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
             text-align: center;
-            font-size: 18px;
-            background: #ff6b00; /* Kalshi orange-ish */
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 20px rgba(255,107,0,0.45);
+            margin-top: auto;
         }
-        .error {
+        .cta span {
+            font-size: 26px;
+            margin-left: 8px;
+        }
+        .error, .loading {
             text-align: center;
-            font-size: 18px;
-            color: #ff0000;
+            font-size: 20px;
+            padding: 40px 20px;
+            color: #ffcc00;
         }
         .fallback-note {
             font-size: 14px;
-            color: #ffff00;
-            margin-top: 5px;
+            color: #09C285;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="graphic" id="graphic">
-        <div class="header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Kalshi_logo.svg" alt="Kalshi Logo" onerror="this.alt='Kalshi'; this.src=''; this.nextSibling.textContent='Kalshi';">
-            <h2>Trending U.S. Political Bet Today</h2>
-        </div>
-        <div class="content" id="content">
-            <h1 class="title">Loading...</h1>
-            <div class="prices">
-                <div class="price-box"><h3>Yes</h3><p>--¢</p></div>
-                <div class="price-box"><h3>No</h3><p>--¢</p></div>
+    <div class="ad-graphic">
+        <div class="content-wrapper">
+            <div class="header">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Kalshi_logo.svg" alt="Kalshi" 
+                     onerror="this.src=''; this.alt='Kalshi';">
+                <h2>Trending Political Market RIGHT NOW</h2>
             </div>
-            <p class="volume">24h Volume: --</p>
+
+            <div id="main-content">
+                <h1 class="main-title">Loading Hot Bet...</h1>
+                <div class="prices" id="prices">
+                    <div class="price-box yes"><h3>YES</h3><p>--¢</p></div>
+                    <div class="price-box no"><h3>NO</h3><p>--¢</p></div>
+                </div>
+                <p class="volume">24h Volume: -- contracts<br>Last updated: --</p>
+            </div>
+
+            <div class="cta">TRADE NOW on Kalshi – Predict & Profit!<span>→</span></div>
         </div>
-        <div class="cta">Bet on Real Events with Kalshi – Your Prediction Market Sponsor!</div>
     </div>
 
 <script>
     const TARGET_URL = 'https://api.elections.kalshi.com/trade-api/v2/events?limit=200&with_nested_markets=true&status=open';
     const API_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(TARGET_URL);
-    const CACHE_KEY = 'kalshi_trending_data';
-    const CACHE_EXPIRY = 3600000; // 1 hour in ms
+    const CACHE_KEY = 'kalshi_trending_ad';
+    const CACHE_EXPIRY = 3600000; // 1 hour
 
-    // 1. Display function (called by both cache and fresh fetch)
     function displayMarket(market, isFallback = false, timestamp = new Date()) {
         if (!market) return;
-        document.querySelector('.title').textContent = market.title_short || market.title || 'Market Title Unavailable';
+        document.querySelector('.main-title').textContent = market.title_short || market.title || 'HOT MARKET';
         const yesPrice = market.yes_bid ?? market.last_price ?? '--';
         const noPrice = market.no_bid ?? (market.last_price ? (100 - market.last_price) : '--');
-        document.querySelector('.prices .price-box:nth-child(1) p').textContent = `${yesPrice}¢`;
-        document.querySelector('.prices .price-box:nth-child(2) p').textContent = `${noPrice}¢`;
+        document.querySelector('.price-box.yes p').textContent = `${yesPrice}¢`;
+        document.querySelector('.price-box.no p').textContent = `${noPrice}¢`;
         const volume = (market.volume_24h ?? market.volume ?? 0).toLocaleString();
-        let volumeText = `24h Volume: ${volume} contracts<br>Last updated: ${timestamp.toLocaleTimeString()}`;
+        let volText = `24h Volume: ${volume} contracts<br>Last updated: ${timestamp.toLocaleTimeString([], {timeStyle: 'short'})}`;
         if (isFallback) {
-            volumeText += `<br><span class="fallback-note">(Fallback: Highest volume across all categories)</span>`;
+            volText += `<br><span class="fallback-note">(Top volume market – Politics preferred)</span>`;
         }
-        document.querySelector('.volume').innerHTML = volumeText;
+        document.querySelector('.volume').innerHTML = volText;
     }
 
-    // 2. Load from cache
     function loadCachedData() {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
@@ -146,89 +181,69 @@
                 const { market, isFallback, timestamp } = JSON.parse(cached);
                 if (Date.now() - timestamp < CACHE_EXPIRY) {
                     displayMarket(market, isFallback, new Date(timestamp));
-                    console.log('Loaded from cache successfully');
                     return true;
-                } else {
-                    localStorage.removeItem(CACHE_KEY);
-                    console.log('Cache expired');
                 }
-            } catch (e) {
-                console.error('Cache parse error:', e);
-            }
+            } catch (e) {}
         }
         return false;
     }
 
-    // 3. Save to cache
     function saveToCache(market, isFallback) {
-        const data = { market, isFallback, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        console.log('Saved fresh data to cache');
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            market, isFallback, timestamp: Date.now()
+        }));
     }
 
-    // 4. Fetch with retries
-    async function fetchWithRetry(url, retries = 3, delay = 1000) {
+    async function fetchWithRetry(url, retries = 3, delay = 1200) {
         for (let i = 0; i < retries; i++) {
             try {
-                console.log(`Fetch attempt ${i+1} to ${url}`);
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error(`Fetch attempt ${i+1} failed:`, error);
-                if (i === retries - 1) throw error;
-                await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(res.status);
+                return await res.json();
+            } catch (err) {
+                if (i === retries - 1) throw err;
+                await new Promise(r => setTimeout(r, delay * (i + 1)));
             }
         }
     }
 
-    // 5. Main fetch logic
     async function fetchTrendingBet() {
         try {
             const data = await fetchWithRetry(API_URL);
-            console.log('API data received, events count:', data.events?.length || 0);
+            let trending = null;
+            let maxVol = 0;
+            let politics = false;
 
-            let trendingMarket = null;
-            let maxVolume = 0;
-            let politicsFound = false;
-
-            (data.events || []).forEach(event => {
-                const category = (event.category || '').toLowerCase();
-                if (category === 'politics' || category.includes('politics')) politicsFound = true;
-                (event.markets || []).forEach(market => {
-                    const vol = market.volume_24h ?? market.volume ?? 0;
-                    if (vol > maxVolume) {
-                        maxVolume = vol;
-                        trendingMarket = market;
+            (data.events || []).forEach(ev => {
+                if ((ev.category || '').toLowerCase().includes('politics')) politics = true;
+                (ev.markets || []).forEach(m => {
+                    const v = m.volume_24h ?? m.volume ?? 0;
+                    if (v > maxVol) {
+                        maxVol = v;
+                        trending = m;
                     }
                 });
             });
 
-            if (trendingMarket) {
-                const isFallback = !politicsFound;
-                displayMarket(trendingMarket, isFallback);
-                saveToCache(trendingMarket, isFallback);
+            if (trending) {
+                const fallback = !politics;
+                displayMarket(trending, fallback);
+                saveToCache(trending, fallback);
             } else {
-                document.querySelector('#content').innerHTML = '<p class="error">No active markets found today.</p>';
+                document.getElementById('main-content').innerHTML = '<p class="error">No active markets found – check Kalshi.com!</p>';
             }
-        } catch (error) {
-            console.error('Fetch error:', error);
-            document.querySelector('#content').innerHTML = '<p class="error">Could not load Kalshi data right now. Showing cached if available.</p>';
-            loadCachedData();  // Try cache as fallback
+        } catch (err) {
+            console.error(err);
+            if (!loadCachedData()) {
+                document.getElementById('main-content').innerHTML = '<p class="error">Data temporarily unavailable – visit Kalshi!</p>';
+            }
         }
     }
 
-    // INITIAL LOAD: Show cache immediately if exists, then fetch fresh
-    const hasCache = loadCachedData();
-    if (!hasCache) {
-        document.querySelector('.title').textContent = 'Loading trending bet...';
-    }
-    fetchTrendingBet();  // Always try fresh
-
-    // Auto-refresh every 5 min
-    setInterval(fetchTrendingBet, 300000);
+    // Start
+    loadCachedData() || (document.querySelector('.main-title').textContent = 'Finding the hottest bet...');
+    fetchTrendingBet();
+    setInterval(fetchTrendingBet, 300000); // 5 min
 </script>
 </body>
 </html>
