@@ -13,17 +13,21 @@
             color: #fff;
         }
         .graphic {
-            width: var(--graphic-width, 500px);
-            height: calc(var(--graphic-width) * 1.2); /* 5:6 ratio */
-            background: linear-gradient(to bottom, #0a0a0a, #1a1a1a);
-            border-radius: 0px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
+           width: var(--graphic-width, 500px);
+           height: calc(var(--graphic-width) * 1.2); /* enforces 5:6 ratio (600px height if width=500px) */
+           background-image: url('light-texture.jpg');
+           background-size: cover;          /* scales the image to cover the entire area */
+           background-position: center;     /* centers the image */
+           background-repeat: no-repeat;    /* prevents tiling */
+           border-radius: 0px;
+           overflow: hidden;
+           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+           display: flex;
+           flex-direction: column;
+           justify-content: space-between;
+           padding: 20px;
+           box-sizing: border-box;
+}
         }
         .header {
             text-align: center;
@@ -85,7 +89,7 @@
     <div class="graphic" id="graphic">
         <div class="header">
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Kalshi_logo.svg" alt="Kalshi Logo" onerror="this.alt='Kalshi'; this.src=''; this.nextSibling.textContent='Kalshi';">
-            <h2>Trending US Political Bet Today</h2>
+            <h2>Trending U.S. Political Bet Today</h2>
         </div>
         <div class="content" id="content">
             <h1 class="title">Loading...</h1>
@@ -214,6 +218,7 @@
 </script>
 </body>
 </html>
+
 
 
 
